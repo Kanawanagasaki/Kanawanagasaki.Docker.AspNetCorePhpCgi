@@ -695,12 +695,14 @@ app.Map("{**-catch-all}", async (HttpContext context) =>
 
         using (var processOutput = process.StandardOutput)
         {
-            using var memory = new QueueStream();
+            using var memory = new MemoryStream();
             int lastByte = 0;
             int memoryLength = 0;
             int colonOffset = 0;
 
-            var buffer = new byte[1024];
+            long readPosition = 0;
+
+            var buffer = new byte[8192];
             int bytesRead = 0;
             var headersEnds = false;
             while ((bytesRead = processOutput.BaseStream.Read(buffer, 0, buffer.Length)) > 0)
@@ -725,10 +727,17 @@ app.Map("{**-catch-all}", async (HttpContext context) =>
                             }
 
                             var header = new byte[memoryLength - 2];
+                            memory.Position = readPosition;
                             memory.Read(header, 0, memoryLength - 2);
+                            readPosition = memory.Position;
+
                             var key = iso8859_1.GetString(header, 0, colonOffset).Trim();
                             var value = iso8859_1.GetString(header, colonOffset + 1, header.Length - colonOffset - 1).Trim();
-                            context.Response.Headers[key] = value;
+
+                            if (key == "Status")
+                                context.Response.StatusCode = int.Parse(value.Substring(0, 3));
+                            else
+                                context.Response.Headers[key] = value;
 
                             memoryLength = 0;
                             colonOffset = 0;
@@ -758,24 +767,3 @@ app.Map("{**-catch-all}", async (HttpContext context) =>
     }
 });
 app.Run();
-
-public class QueueStream : MemoryStream
-{
-    private long _readPosition;
-    private long _writePosition;
-
-    public override int Read(byte[] buffer, int offset, int count)
-    {
-        Position = _readPosition;
-        var temp = base.Read(buffer, offset, count);
-        _readPosition = Position;
-        return temp;
-    }
-
-    public override void Write(byte[] buffer, int offset, int count)
-    {
-        Position = _writePosition;
-        base.Write(buffer, offset, count);
-        _writePosition = Position;
-    }
-}
