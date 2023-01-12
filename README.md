@@ -1,0 +1,1 @@
+# Kanawanagasaki.Docker.AspNetCorePhpCgi
