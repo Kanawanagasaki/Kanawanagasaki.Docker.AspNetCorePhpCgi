@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Kanawanagasaki.Docker.AspNetCorePhpCgi": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:63702;http://localhost:63703"
+    }
+  }
+}
